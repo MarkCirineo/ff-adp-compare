@@ -388,7 +388,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Column widths */
 .col-rank   { width: 50px; text-align: center; }
-.col-player { width: 200px; }
+.col-player { width: 240px; }
 .col-pos    { width: 60px; text-align: center; }
 .col-team   { width: 60px; text-align: center; }
 .col-bye    { width: 50px; text-align: center; }

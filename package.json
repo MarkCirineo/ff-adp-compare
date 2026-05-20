@@ -11,6 +11,7 @@
     "sync:sleeper": "tsx src/connector/cli.ts --source=sleeper",
     "sync:yahoo": "tsx src/connector/cli.ts --source=yahoo",
     "sync:espn": "tsx src/connector/cli.ts --source=espn",
+    "sync:fantasypros": "tsx src/connector/cli.ts --source=fantasypros",
     "sync:dry": "tsx src/connector/cli.ts --dry-run",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",

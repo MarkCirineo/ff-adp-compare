@@ -16,8 +16,10 @@ interface PlayerRow {
   team: string | null;
   position: string;
   byeWeek: number | null;
+  imageUrl: string | null;
   adp: Record<string, number | null>;
   avgAdp: number | null;
+  ecr: number | null;
   ranking: Record<string, number | null>;
   avgRanking: number | null;
   posRank: string | null;
@@ -31,7 +33,7 @@ type SortKey =
   | 'sleeperAdp'
   | 'espnAdp'
   | 'yahooAdp'
-  | 'avgRanking'
+  | 'ecr'
   | 'value'
   | 'projPts'
   | 'bye';
@@ -93,7 +95,8 @@ export default function DashboardPage() {
   const computedPlayers = useMemo(() => {
     return players.map((p, idx) => {
       const adp = p.avgAdp;
-      const rank = p.avgRanking;
+      // Use FantasyPros ECR as primary ranking (the whole point of the app)
+      const rank = p.ecr;
       const valueScore =
         adp !== null && rank !== null
           ? computeValueScore(adp, rank, leagueSize)
@@ -156,9 +159,9 @@ export default function DashboardPage() {
           aVal = a.adp.yahoo;
           bVal = b.adp.yahoo;
           break;
-        case 'avgRanking':
-          aVal = a.avgRanking;
-          bVal = b.avgRanking;
+        case 'ecr':
+          aVal = a.ecr;
+          bVal = b.ecr;
           break;
         case 'value':
           aVal = a.valueScore;
@@ -379,10 +382,10 @@ export default function DashboardPage() {
                     <SortHeader label="Player" sortId="name" className="col-player" />
                     <SortHeader label="Pos" sortId="position" className="col-pos" />
                     <SortHeader label="Avg ADP" sortId="avgAdp" className="col-adp" />
+                    <SortHeader label="ECR" sortId="ecr" className="col-adp" />
                     <SortHeader label="Sleeper" sortId="sleeperAdp" className="col-adp" />
                     <SortHeader label="ESPN" sortId="espnAdp" className="col-adp" />
                     <SortHeader label="Yahoo" sortId="yahooAdp" className="col-adp" />
-                    <SortHeader label="Rank" sortId="avgRanking" className="col-adp" />
                     <SortHeader label="Value" sortId="value" className="col-value" />
                     <SortHeader label="Proj Pts" sortId="projPts" className="col-pts" />
                     <SortHeader label="Bye" sortId="bye" className="col-bye" />
@@ -417,16 +420,29 @@ export default function DashboardPage() {
 
                         {/* Player Name */}
                         <td className="col-player">
-                          <span className="player-name">{player.name}</span>
-                          {player.team && (
-                            <span className="player-team">{player.team}</span>
-                          )}
-                          {isNearUserPick && (
-                            <span className="pick-badge" style={{ marginLeft: 8 }}>
-                              <span className="pick-badge__icon" />
-                              YOUR PICK
-                            </span>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {player.imageUrl && (
+                              <img
+                                src={player.imageUrl}
+                                alt=""
+                                width={28}
+                                height={28}
+                                style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                              />
+                            )}
+                            <div>
+                              <span className="player-name">{player.name}</span>
+                              {player.team && (
+                                <span className="player-team">{player.team}</span>
+                              )}
+                              {isNearUserPick && (
+                                <span className="pick-badge" style={{ marginLeft: 8 }}>
+                                  <span className="pick-badge__icon" />
+                                  YOUR PICK
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </td>
 
                         {/* Position */}
@@ -464,10 +480,10 @@ export default function DashboardPage() {
                           </span>
                         </td>
 
-                        {/* Ranking */}
+                        {/* ECR (FantasyPros Expert Consensus Ranking) */}
                         <td className="col-adp">
-                          <span className="adp-cell">
-                            {player.avgRanking?.toFixed(0) ?? '—'}
+                          <span className="adp-cell" style={{ fontWeight: 600, color: 'var(--accent-hover)' }}>
+                            {player.ecr ?? '—'}
                           </span>
                           {player.posRank && (
                             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: 4 }}>

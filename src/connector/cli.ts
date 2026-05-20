@@ -12,7 +12,7 @@
 import { runPipeline } from './pipeline.js';
 import type { DataSource } from '../lib/types.js';
 
-const VALID_SOURCES = new Set(['sleeper', 'yahoo', 'espn']);
+const VALID_SOURCES = new Set(['sleeper', 'yahoo', 'espn', 'fantasypros']);
 
 function parseArgs(): {
   sources?: DataSource[];

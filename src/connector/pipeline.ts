@@ -9,9 +9,10 @@ import { PlayerMatcher } from './normalize/matcher.js';
 import { syncSleeper } from './sources/sleeper.js';
 import { syncYahoo } from './sources/yahoo.js';
 import { syncEspn } from './sources/espn.js';
+import { syncFantasyPros } from './sources/fantasypros.js';
 import type { DataSource, SyncResult } from '../lib/types.js';
 
-const ALL_SOURCES: DataSource[] = ['sleeper', 'yahoo', 'espn'];
+const ALL_SOURCES: DataSource[] = ['sleeper', 'yahoo', 'espn', 'fantasypros'];
 
 interface PipelineOptions {
   sources?: DataSource[];
@@ -68,6 +69,9 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<SyncRe
             break;
           case 'espn':
             result = await syncEspn(prisma, matcher, season, dryRun);
+            break;
+          case 'fantasypros':
+            result = await syncFantasyPros(prisma, matcher, season, dryRun);
             break;
           default:
             throw new Error(`Unknown source: ${source}`);

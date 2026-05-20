@@ -15,7 +15,7 @@ export type RosterType = '1qb' | '2qb' | 'superflex';
 export type Position = 'QB' | 'RB' | 'WR' | 'TE' | 'K' | 'DEF';
 
 /** Data source identifier */
-export type DataSource = 'sleeper' | 'yahoo' | 'espn';
+export type DataSource = 'sleeper' | 'yahoo' | 'espn' | 'fantasypros';
 
 /** Sync status */
 export type SyncStatus = 'success' | 'error' | 'partial';

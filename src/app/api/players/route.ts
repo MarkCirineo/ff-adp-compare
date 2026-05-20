@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
         sleeper: null,
         yahoo: null,
         espn: null,
+        fantasypros: null,
       };
 
       for (const entry of player.adpEntries) {
@@ -89,21 +90,28 @@ export async function GET(request: NextRequest) {
         sleeper: null,
         yahoo: null,
         espn: null,
+        fantasypros: null,
       };
       let posRank: string | null = null;
 
       for (const entry of player.rankings) {
         if (entry.scoring === scoring || !rankBySource[entry.source]) {
           rankBySource[entry.source] = entry.rank;
-          if (entry.posRank && !posRank) {
+          // Prefer FantasyPros posRank (most authoritative)
+          if (entry.posRank && (entry.source === 'fantasypros' || !posRank)) {
             posRank = entry.posRank;
           }
         }
       }
 
-      const rankValues = Object.values(rankBySource).filter((v): v is number => v !== null);
-      const avgRank = rankValues.length > 0
-        ? parseFloat((rankValues.reduce((a, b) => a + b, 0) / rankValues.length).toFixed(1))
+      // ECR = FantasyPros ranking (the gold standard)
+      const ecr = rankBySource.fantasypros;
+
+      // Average ranking from non-FP sources for comparison
+      const otherRanks = [rankBySource.sleeper, rankBySource.yahoo, rankBySource.espn]
+        .filter((v): v is number => v !== null);
+      const avgRank = otherRanks.length > 0
+        ? parseFloat((otherRanks.reduce((a, b) => a + b, 0) / otherRanks.length).toFixed(1))
         : null;
 
       // Projection points
@@ -123,8 +131,10 @@ export async function GET(request: NextRequest) {
         team: player.team,
         position: player.position,
         byeWeek: player.byeWeek,
+        imageUrl: player.imageUrl ?? null,
         adp: adpBySource,
         avgAdp,
+        ecr,
         ranking: rankBySource,
         avgRanking: avgRank,
         posRank,
