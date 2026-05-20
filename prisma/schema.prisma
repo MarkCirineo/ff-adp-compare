@@ -8,21 +8,23 @@ datasource db {
 }
 
 // ============================================
-// Player — canonical player identity
+// players — canonical player identity
 // ============================================
 model Player {
   id             String       @id @default(cuid())
   name           String
-  normalizedName String
+  normalizedName String       @map("normalized_name")
   team           String?
-  position       String       // QB, RB, WR, TE, K, DEF
-  byeWeek        Int?
-  sleeperId      String?      @unique
-  espnId         String?      @unique
-  yahooId        String?      @unique
-  externalIds    Json?        // overflow for additional IDs
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  position       String
+  byeWeek        Int?         @map("bye_week")
+  imageUrl       String?      @map("image_url")
+  sleeperId      String?      @unique @map("sleeper_id")
+  espnId         String?      @unique @map("espn_id")
+  yahooId        String?      @unique @map("yahoo_id")
+  fantasyProsId  String?      @unique @map("fantasy_pros_id")
+  externalIds    Json?        @map("external_ids")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
   rankings    Ranking[]
   adpEntries  Adp[]
@@ -31,98 +33,106 @@ model Player {
   @@index([normalizedName])
   @@index([position])
   @@index([team])
+  @@map("players")
 }
 
 // ============================================
-// Ranking — per-source expert/staff rankings
+// rankings — per-source expert/staff rankings
 // ============================================
 model Ranking {
   id        String   @id @default(cuid())
-  playerId  String
-  source    String   // sleeper, yahoo, espn
+  playerId  String   @map("player_id")
+  source    String
   rank      Int
-  posRank   String?  // e.g. "RB5", "WR12"
+  posRank   String?  @map("pos_rank")
   format    String   @default("redraft")
-  scoring   String   @default("half_ppr") // std, half_ppr, ppr
+  scoring   String   @default("half_ppr")
   season    Int
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, source, format, scoring, season])
   @@index([source])
   @@index([format, scoring])
+  @@map("rankings")
 }
 
 // ============================================
-// Adp — per-source average draft position
+// adp — per-source average draft position
 // ============================================
 model Adp {
   id        String   @id @default(cuid())
-  playerId  String
-  source    String   // sleeper, yahoo, espn
+  playerId  String   @map("player_id")
+  source    String
   adp       Float
   format    String   @default("redraft")
-  scoring   String   @default("half_ppr") // std, half_ppr, ppr
+  scoring   String   @default("half_ppr")
   season    Int
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, source, format, scoring, season])
   @@index([source])
   @@index([format, scoring])
+  @@map("adp")
 }
 
 // ============================================
-// Projection — season stat projections
+// projections — season stat projections
 // ============================================
 model Projection {
   id         String   @id @default(cuid())
-  playerId   String
-  source     String   // sleeper (primary), espn
+  playerId   String   @map("player_id")
+  source     String
   season     Int
-  ptsStd     Float?
-  ptsHalfPpr Float?
-  ptsPpr     Float?
-  passYd     Float?
-  passTd     Float?
-  rushYd     Float?
-  rushTd     Float?
+  ptsStd     Float?   @map("pts_std")
+  ptsHalfPpr Float?   @map("pts_half_ppr")
+  ptsPpr     Float?   @map("pts_ppr")
+  passYd     Float?   @map("pass_yd")
+  passTd     Float?   @map("pass_td")
+  rushYd     Float?   @map("rush_yd")
+  rushTd     Float?   @map("rush_td")
   rec        Float?
-  recYd      Float?
-  recTd      Float?
-  updatedAt  DateTime @updatedAt
+  recYd      Float?   @map("rec_yd")
+  recTd      Float?   @map("rec_td")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, source, season])
+  @@map("projections")
 }
 
 // ============================================
-// SavedLeague — user league configurations
+// saved_leagues — user league configurations
 // ============================================
 model SavedLeague {
   id            String   @id @default(cuid())
   name          String
-  leagueSize    Int      @default(12)
-  draftPosition Int      @default(1)
+  leagueSize    Int      @default(12) @map("league_size")
+  draftPosition Int      @default(1) @map("draft_position")
   scoring       String   @default("half_ppr")
   format        String   @default("redraft")
   roster        String   @default("1qb")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("saved_leagues")
 }
 
 // ============================================
-// SyncLog — data pipeline audit trail
+// sync_log — data pipeline audit trail
 // ============================================
 model SyncLog {
   id           String    @id @default(cuid())
   source       String
-  status       String    // success, error, partial
-  playersFound Int       @default(0)
+  status       String
+  playersFound Int       @default(0) @map("players_found")
   errors       Json?
-  startedAt    DateTime
-  completedAt  DateTime?
+  startedAt    DateTime  @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+
+  @@map("sync_log")
 }
