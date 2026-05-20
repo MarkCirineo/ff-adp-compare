@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# build
+dist/
+.next/
+out/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# prisma
+packages/db/prisma/migrations/
+
+# misc
+*.log
+*.tsbuildinfo

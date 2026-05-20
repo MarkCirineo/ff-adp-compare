@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Player — canonical player identity
+// ============================================
+model Player {
+  id             String       @id @default(cuid())
+  name           String
+  normalizedName String
+  team           String?
+  position       String       // QB, RB, WR, TE, K, DEF
+  byeWeek        Int?
+  sleeperId      String?      @unique
+  espnId         String?      @unique
+  yahooId        String?      @unique
+  externalIds    Json?        // overflow for additional IDs
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  rankings    Ranking[]
+  adpEntries  Adp[]
+  projections Projection[]
+
+  @@index([normalizedName])
+  @@index([position])
+  @@index([team])
+}
+
+// ============================================
+// Ranking — per-source expert/staff rankings
+// ============================================
+model Ranking {
+  id        String   @id @default(cuid())
+  playerId  String
+  source    String   // sleeper, yahoo, espn
+  rank      Int
+  posRank   String?  // e.g. "RB5", "WR12"
+  format    String   @default("redraft")
+  scoring   String   @default("half_ppr") // std, half_ppr, ppr
+  season    Int
+  updatedAt DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, source, format, scoring, season])
+  @@index([source])
+  @@index([format, scoring])
+}
+
+// ============================================
+// Adp — per-source average draft position
+// ============================================
+model Adp {
+  id        String   @id @default(cuid())
+  playerId  String
+  source    String   // sleeper, yahoo, espn
+  adp       Float
+  format    String   @default("redraft")
+  scoring   String   @default("half_ppr") // std, half_ppr, ppr
+  season    Int
+  updatedAt DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, source, format, scoring, season])
+  @@index([source])
+  @@index([format, scoring])
+}
+
+// ============================================
+// Projection — season stat projections
+// ============================================
+model Projection {
+  id         String   @id @default(cuid())
+  playerId   String
+  source     String   // sleeper (primary), espn
+  season     Int
+  ptsStd     Float?
+  ptsHalfPpr Float?
+  ptsPpr     Float?
+  passYd     Float?
+  passTd     Float?
+  rushYd     Float?
+  rushTd     Float?
+  rec        Float?
+  recYd      Float?
+  recTd      Float?
+  updatedAt  DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, source, season])
+}
+
+// ============================================
+// SavedLeague — user league configurations
+// ============================================
+model SavedLeague {
+  id            String   @id @default(cuid())
+  name          String
+  leagueSize    Int      @default(12)
+  draftPosition Int      @default(1)
+  scoring       String   @default("half_ppr")
+  format        String   @default("redraft")
+  roster        String   @default("1qb")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ============================================
+// SyncLog — data pipeline audit trail
+// ============================================
+model SyncLog {
+  id           String    @id @default(cuid())
+  source       String
+  status       String    // success, error, partial
+  playersFound Int       @default(0)
+  errors       Json?
+  startedAt    DateTime
+  completedAt  DateTime?
+}
