@@ -48,17 +48,21 @@ interface YahooPlayer {
  */
 async function getGameKey(): Promise<string> {
   try {
-    const res = await fetchWithRetry(
-      'https://fantasysports.yahooapis.com/fantasy/v2/game/nfl?format=json_f'
+    // Use the pub-api-ro endpoint which is more reliable
+    const res = await fetch(
+      'https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/game/nfl?format=json_f',
+      { signal: AbortSignal.timeout(5000) }
     );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const gameKey = data?.fantasy_content?.game?.game_key;
     if (gameKey) {
       console.log(`  → Yahoo game key detected: ${gameKey}`);
       return String(gameKey);
     }
-  } catch {
-    console.warn(`  ⚠ Could not auto-detect Yahoo game key, using default: ${DEFAULT_GAME_KEY}`);
+  } catch (err) {
+    console.warn(`  ⚠ Could not auto-detect Yahoo game key: ${err}`);
+    console.warn(`  → Using default: ${DEFAULT_GAME_KEY}`);
   }
   return DEFAULT_GAME_KEY;
 }
@@ -95,22 +99,32 @@ export async function syncYahoo(
     }
 
     // Navigate Yahoo's nested response structure
+    // json_f format returns players as an array of { player: { ... } } objects
     const league = data?.fantasy_content?.league;
-    const playersWrapper = league?.players;
+    const playersData = league?.players;
 
-    // Yahoo returns players as numbered keys with a "count" key
-    const count = playersWrapper?.count ?? 0;
-    if (count === 0) {
+    if (!playersData || !Array.isArray(playersData) || playersData.length === 0) {
+      console.log(`  → Page offset=${offset}: no players returned`);
+      if (offset === 0) {
+        // Log response structure for debugging
+        const keys = league ? Object.keys(league) : [];
+        console.log(`  → League keys: ${keys.join(', ')}`);
+        if (playersData) {
+          console.log(`  → players type: ${typeof playersData}, isArray: ${Array.isArray(playersData)}`);
+          if (typeof playersData === 'object' && !Array.isArray(playersData)) {
+            console.log(`  → players keys: ${Object.keys(playersData).join(', ')}`);
+          }
+        }
+      }
       hasMore = false;
       break;
     }
 
     const playerEntries: YahooPlayer[] = [];
-    for (let i = 0; i < count; i++) {
-      const entry = playersWrapper?.[String(i)]?.player;
-      if (entry) {
-        // Yahoo nests player info in arrays, flatten it
-        const flat = flattenYahooPlayer(entry);
+    for (const entry of playersData) {
+      const playerObj = entry?.player;
+      if (playerObj) {
+        const flat = flattenYahooPlayer(playerObj);
         if (flat) playerEntries.push(flat);
       }
     }
@@ -141,13 +155,13 @@ export async function syncYahoo(
       }
 
       if (dryRun) {
-        const rank = yp.player_ranks?.find((r) => r.rank_type === 'S')?.rank_value ?? '?';
+        const rank = yp.player_ranks?.find((r) => r.rank_type === 'S' && r.rank_season === String(season))?.rank_value ?? '?';
         console.log(`    ${yp.name.full}: rank=${rank}`);
         continue;
       }
 
       // ---- Upsert Rankings ----
-      const seasonRank = yp.player_ranks?.find((r) => r.rank_type === 'S');
+      const seasonRank = yp.player_ranks?.find((r) => r.rank_type === 'S' && r.rank_season === String(season));
       if (seasonRank && seasonRank.rank_value && seasonRank.rank_value !== '-') {
         const rankValue = parseInt(seasonRank.rank_value, 10);
         if (!isNaN(rankValue)) {
