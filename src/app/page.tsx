@@ -205,12 +205,13 @@ export default function DashboardPage() {
     }
   };
 
-  const SortHeader = ({ label, sortId, className }: { label: string; sortId: SortKey; className?: string }) => (
+  const SortHeader = ({ label, sortId, className, title }: { label: string; sortId: SortKey; className?: string; title?: string }) => (
     <th
       className={`${className ?? ''} ${sortKey === sortId ? 'sorted' : ''}`}
       onClick={() => handleSort(sortId)}
       role="columnheader"
       aria-sort={sortKey === sortId ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+      title={title}
     >
       {label}
       {sortKey === sortId && (
@@ -381,14 +382,14 @@ export default function DashboardPage() {
                     <th className="col-rank" style={{ cursor: 'default' }}>#</th>
                     <SortHeader label="Player" sortId="name" className="col-player" />
                     <SortHeader label="Pos" sortId="position" className="col-pos" />
-                    <SortHeader label="Avg ADP" sortId="avgAdp" className="col-adp" />
-                    <SortHeader label="ECR" sortId="ecr" className="col-adp" />
-                    <SortHeader label="Sleeper" sortId="sleeperAdp" className="col-adp" />
-                    <SortHeader label="ESPN" sortId="espnAdp" className="col-adp" />
-                    <SortHeader label="Yahoo" sortId="yahooAdp" className="col-adp" />
-                    <SortHeader label="Value" sortId="value" className="col-value" />
-                    <SortHeader label="Proj Pts" sortId="projPts" className="col-pts" />
-                    <SortHeader label="Bye" sortId="bye" className="col-bye" />
+                    <SortHeader label="Avg ADP" sortId="avgAdp" className="col-adp" title="Average ADP across all sources" />
+                    <SortHeader label="ECR" sortId="ecr" className="col-adp" title="FantasyPros Expert Consensus Ranking — changes with scoring format" />
+                    <SortHeader label="Sleeper" sortId="sleeperAdp" className="col-adp" title="Sleeper mock draft ADP — changes with scoring format" />
+                    <SortHeader label="ESPN" sortId="espnAdp" className="col-adp" title="ESPN ADP — not scoring-specific, same value across all formats" />
+                    <SortHeader label="Yahoo" sortId="yahooAdp" className="col-adp" title="Yahoo season rank — not ADP, not scoring-specific" />
+                    <SortHeader label="Value" sortId="value" className="col-value" title="Value = ADP vs ECR. Positive = steal, Negative = reach" />
+                    <SortHeader label="Proj Pts" sortId="projPts" className="col-pts" title="Projected fantasy points for the season" />
+                    <SortHeader label="Bye" sortId="bye" className="col-bye" title="Bye week" />
                   </tr>
                 </thead>
                 <tbody>
