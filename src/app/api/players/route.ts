@@ -79,8 +79,11 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Average ADP across available sources
-      const adpValues = Object.values(adpBySource).filter((v): v is number => v !== null);
+      // Average ADP across available sources, ignoring absurdly high values
+      // (Sleeper reports ADP 999+ for players who are barely/never drafted)
+      const adpValues = Object.values(adpBySource).filter(
+        (v): v is number => v !== null && v < 300
+      );
       const avgAdp = adpValues.length > 0
         ? parseFloat((adpValues.reduce((a, b) => a + b, 0) / adpValues.length).toFixed(1))
         : null;

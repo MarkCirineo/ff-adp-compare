@@ -86,19 +86,18 @@ export default function DashboardPage() {
     [leagueSize, draftPosition]
   );
 
-  const userPickSet = useMemo(
-    () => new Set(userPicks.map((p) => p.pick)),
-    [userPicks]
-  );
-
   // ---- Computed Players (with value scores) ----
   const computedPlayers = useMemo(() => {
     return players.map((p, idx) => {
       const adp = p.avgAdp;
       // Use FantasyPros ECR as primary ranking (the whole point of the app)
       const rank = p.ecr;
+      // Only compute value if both ADP and ECR exist AND both are within
+      // the draftable range (first 15 rounds = standard draft length).
+      // Late-round players beyond round 15 produce noisy, misleading values.
+      const draftableLimit = leagueSize * 15;
       const valueScore =
-        adp !== null && rank !== null
+        adp !== null && rank !== null && adp <= draftableLimit && rank <= draftableLimit
           ? computeValueScore(adp, rank, leagueSize)
           : null;
 
@@ -226,7 +225,8 @@ export default function DashboardPage() {
     const sources = {
       sleeper: players.filter((p) => p.adp.sleeper !== null).length,
       espn: players.filter((p) => p.adp.espn !== null).length,
-      yahoo: players.filter((p) => p.adp.yahoo !== null).length,
+      // Yahoo provides rankings (not ADP), so count those
+      yahoo: players.filter((p) => p.ranking.yahoo !== null).length,
     };
     return {
       total: players.length,
@@ -397,8 +397,12 @@ export default function DashboardPage() {
                     const adp = player.avgAdp;
                     const round = adp !== null ? adpToRound(adp, leagueSize) : null;
                     const isEvenRound = round !== null && round % 2 === 0;
-                    const pickNum = adp !== null ? Math.round(adp) : null;
-                    const isNearUserPick = pickNum !== null && userPickSet.has(pickNum);
+
+                    // Check if this player's ADP falls near any of the user's picks
+                    // Use a ±1.0 range to handle fractional ADPs (e.g., ADP 1.8 matches pick #1)
+                    const isNearUserPick = adp !== null && userPicks.some(
+                      (p) => Math.abs(adp - p.pick) < 1.0
+                    );
 
                     // Value tier
                     const tier = player.valueScore !== null
@@ -459,6 +463,18 @@ export default function DashboardPage() {
                           </span>
                         </td>
 
+                        {/* ECR (FantasyPros Expert Consensus Ranking) */}
+                        <td className="col-adp">
+                          <span className="adp-cell" style={{ fontWeight: 600, color: 'var(--accent-hover)' }}>
+                            {player.ecr ?? '—'}
+                          </span>
+                          {player.posRank && (
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: 4 }}>
+                              {player.posRank}
+                            </span>
+                          )}
+                        </td>
+
                         {/* Sleeper ADP */}
                         <td className="col-adp">
                           <span className={`adp-cell ${player.adp.sleeper === null ? 'adp-cell--empty' : ''}`}>
@@ -473,23 +489,16 @@ export default function DashboardPage() {
                           </span>
                         </td>
 
-                        {/* Yahoo ADP */}
+                        {/* Yahoo Rank (Yahoo provides ranks, not ADP) */}
                         <td className="col-adp">
-                          <span className={`adp-cell ${player.adp.yahoo === null ? 'adp-cell--empty' : ''}`}>
-                            {player.adp.yahoo?.toFixed(1) ?? '—'}
-                          </span>
-                        </td>
-
-                        {/* ECR (FantasyPros Expert Consensus Ranking) */}
-                        <td className="col-adp">
-                          <span className="adp-cell" style={{ fontWeight: 600, color: 'var(--accent-hover)' }}>
-                            {player.ecr ?? '—'}
-                          </span>
-                          {player.posRank && (
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: 4 }}>
-                              {player.posRank}
-                            </span>
-                          )}
+                          {(() => {
+                            const val = player.adp.yahoo ?? player.ranking.yahoo;
+                            return val !== null ? (
+                              <span className="adp-cell">{val}</span>
+                            ) : (
+                              <span className="adp-cell adp-cell--empty">—</span>
+                            );
+                          })()}
                         </td>
 
                         {/* Value */}
