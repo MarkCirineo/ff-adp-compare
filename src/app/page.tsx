@@ -26,10 +26,13 @@ interface PlayerRow {
   projPts: number | null;
 }
 
+type Platform = 'sleeper' | 'espn' | 'yahoo';
+
 type SortKey =
   | 'avgAdp'
   | 'name'
   | 'position'
+  | 'platformAdp'
   | 'sleeperAdp'
   | 'espnAdp'
   | 'yahooAdp'
@@ -40,6 +43,12 @@ type SortKey =
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF'] as const;
 
+const PLATFORM_META: Record<Platform, { label: string; icon: string; color: string }> = {
+  sleeper: { label: 'Sleeper', icon: '🟢', color: '#3dd8a0' },
+  espn:    { label: 'ESPN',    icon: '🔴', color: '#ff4545' },
+  yahoo:   { label: 'Yahoo',   icon: '🟣', color: '#7c5cfc' },
+};
+
 export default function DashboardPage() {
   // ---- State ----
   const [players, setPlayers] = useState<PlayerRow[]>([]);
@@ -47,9 +56,10 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   // League settings
-  const [leagueSize, setLeagueSize] = useState(12);
-  const [draftPosition, setDraftPosition] = useState(1);
+  const [platform, setPlatform] = useState<Platform>('sleeper');
   const [scoring, setScoring] = useState<'std' | 'half_ppr' | 'ppr'>('half_ppr');
+  const [leagueSize, setLeagueSize] = useState(12);
+  const [draftPosition, setDraftPosition] = useState<number | null>(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -80,34 +90,43 @@ export default function DashboardPage() {
     fetchPlayers();
   }, [fetchPlayers]);
 
-  // ---- Draft Picks ----
+  // ---- Draft Picks (only when pick position is set) ----
   const userPicks = useMemo(
-    () => getUserPicks(leagueSize, draftPosition),
+    () => draftPosition !== null ? getUserPicks(leagueSize, draftPosition) : [],
     [leagueSize, draftPosition]
   );
+
+  // ---- Helper: get platform-specific ADP ----
+  const getPlatformAdp = useCallback((player: PlayerRow): number | null => {
+    // For Yahoo, we use ranking since they don't provide traditional ADP
+    if (platform === 'yahoo') {
+      return player.adp.yahoo ?? player.ranking.yahoo ?? null;
+    }
+    return player.adp[platform] ?? null;
+  }, [platform]);
 
   // ---- Computed Players (with value scores) ----
   const computedPlayers = useMemo(() => {
     return players.map((p, idx) => {
-      const adp = p.avgAdp;
-      // Use FantasyPros ECR as primary ranking (the whole point of the app)
+      const platformAdp = getPlatformAdp(p);
       const rank = p.ecr;
-      // Only compute value if both ADP and ECR exist AND both are within
+
+      // Only compute value if both platform ADP and ECR exist AND both are within
       // the draftable range (first 15 rounds = standard draft length).
-      // Late-round players beyond round 15 produce noisy, misleading values.
       const draftableLimit = leagueSize * 15;
       const valueScore =
-        adp !== null && rank !== null && adp <= draftableLimit && rank <= draftableLimit
-          ? computeValueScore(adp, rank, leagueSize)
+        platformAdp !== null && rank !== null && platformAdp <= draftableLimit && rank <= draftableLimit
+          ? computeValueScore(platformAdp, rank, leagueSize)
           : null;
 
       return {
         ...p,
+        platformAdp,
         valueScore,
         displayRank: idx + 1,
       };
     });
-  }, [players, leagueSize]);
+  }, [players, leagueSize, getPlatformAdp]);
 
   // ---- Filtered & Sorted ----
   const filteredPlayers = useMemo(() => {
@@ -145,6 +164,10 @@ export default function DashboardPage() {
         case 'position':
           aVal = a.position;
           bVal = b.position;
+          break;
+        case 'platformAdp':
+          aVal = a.platformAdp;
+          bVal = b.platformAdp;
           break;
         case 'sleeperAdp':
           aVal = a.adp.sleeper;
@@ -222,7 +245,6 @@ export default function DashboardPage() {
 
   // ---- Stats ----
   const stats = useMemo(() => {
-    const withAdp = players.filter((p) => p.avgAdp !== null);
     const sources = {
       sleeper: players.filter((p) => p.adp.sleeper !== null).length,
       espn: players.filter((p) => p.adp.espn !== null).length,
@@ -231,10 +253,11 @@ export default function DashboardPage() {
     };
     return {
       total: players.length,
-      withAdp: withAdp.length,
       sources,
     };
   }, [players]);
+
+  const activePlatformMeta = PLATFORM_META[platform];
 
   // ---- Render ----
   return (
@@ -246,12 +269,57 @@ export default function DashboardPage() {
           {APP_CONFIG.name}
         </div>
 
-        <div className="controls-bar" style={{ marginLeft: 'auto' }}>
-          <div className="control-group">
-            <label className="control-label" htmlFor="scoring-select">Scoring</label>
+        {/* Compact player counts — top right */}
+        <div className="header-stats">
+          <div className="header-stat" title={`${stats.sources.sleeper} players from Sleeper`}>
+            <span className="header-stat__dot header-stat__dot--sleeper" />
+            {stats.sources.sleeper}
+          </div>
+          <div className="header-stat" title={`${stats.sources.espn} players from ESPN`}>
+            <span className="header-stat__dot header-stat__dot--espn" />
+            {stats.sources.espn}
+          </div>
+          <div className="header-stat" title={`${stats.sources.yahoo} players from Yahoo`}>
+            <span className="header-stat__dot header-stat__dot--yahoo" />
+            {stats.sources.yahoo}
+          </div>
+          <div className="header-stat header-stat--total" title={`${stats.total} total players`}>
+            {stats.total} total
+          </div>
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="app-main" role="main">
+        {/* Settings Panel — the hero controls */}
+        <div className="settings-hero">
+          <div className="settings-hero__group settings-hero__group--platform">
+            <label className="settings-hero__label">Platform</label>
+            <div className="platform-selector" role="radiogroup" aria-label="Select your draft platform">
+              {(Object.keys(PLATFORM_META) as Platform[]).map((p) => (
+                <button
+                  key={p}
+                  className={`platform-btn ${platform === p ? 'platform-btn--active' : ''}`}
+                  onClick={() => setPlatform(p)}
+                  aria-pressed={platform === p}
+                  style={{
+                    '--platform-color': PLATFORM_META[p].color,
+                  } as React.CSSProperties}
+                >
+                  <span className="platform-btn__icon">{PLATFORM_META[p].icon}</span>
+                  <span className="platform-btn__label">{PLATFORM_META[p].label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-hero__divider" />
+
+          <div className="settings-hero__group">
+            <label className="settings-hero__label" htmlFor="scoring-select">Scoring</label>
             <select
               id="scoring-select"
-              className="select"
+              className="select select--hero"
               value={scoring}
               onChange={(e) => setScoring(e.target.value as 'std' | 'half_ppr' | 'ppr')}
             >
@@ -261,13 +329,20 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          <div className="control-group">
-            <label className="control-label" htmlFor="league-size">Teams</label>
+          <div className="settings-hero__group">
+            <label className="settings-hero__label" htmlFor="league-size">Teams</label>
             <select
               id="league-size"
-              className="select"
+              className="select select--hero"
               value={leagueSize}
-              onChange={(e) => setLeagueSize(Number(e.target.value))}
+              onChange={(e) => {
+                const newSize = Number(e.target.value);
+                setLeagueSize(newSize);
+                // Reset draft position if it exceeds new league size
+                if (draftPosition !== null && draftPosition > newSize) {
+                  setDraftPosition(null);
+                }
+              }}
             >
               {[8, 10, 12, 14, 16].map((n) => (
                 <option key={n} value={n}>{n}</option>
@@ -275,48 +350,37 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          <div className="control-group">
-            <label className="control-label" htmlFor="draft-pos">Pick</label>
+          <div className="settings-hero__group">
+            <label className="settings-hero__label" htmlFor="draft-pos">Pick #</label>
             <select
               id="draft-pos"
-              className="select"
-              value={draftPosition}
-              onChange={(e) => setDraftPosition(Number(e.target.value))}
+              className="select select--hero"
+              value={draftPosition ?? ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setDraftPosition(val === '' ? null : Number(val));
+              }}
             >
+              <option value="">—</option>
               {Array.from({ length: leagueSize }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>#{n}</option>
               ))}
             </select>
           </div>
-        </div>
-      </header>
 
-      {/* Main */}
-      <main className="app-main" role="main">
-        {/* Stats Bar */}
-        <div className="stats-bar">
-          <div className="stat-card">
-            <span className="stat-card__label">Players</span>
-            <span className="stat-card__value">{stats.total}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-card__label">Sleeper</span>
-            <span className="stat-card__value">{stats.sources.sleeper}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-card__label">ESPN</span>
-            <span className="stat-card__value">{stats.sources.espn}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-card__label">Yahoo</span>
-            <span className="stat-card__value">{stats.sources.yahoo}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-card__label">Your Next Pick</span>
-            <span className="stat-card__value" style={{ color: 'var(--accent-hover)' }}>
-              {userPicks[0] ? `#${userPicks[0].pick}` : '—'}
-            </span>
-          </div>
+          {/* Show next pick info if draft position is set */}
+          {draftPosition !== null && userPicks[0] && (
+            <>
+              <div className="settings-hero__divider" />
+              <div className="settings-hero__pick-info">
+                <span className="settings-hero__pick-label">Next Pick</span>
+                <span className="settings-hero__pick-value">
+                  <span className="pick-dot" />
+                  #{userPicks[0].pick}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Controls */}
@@ -346,7 +410,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+          <span className="results-count">
             {filteredPlayers.length} players
           </span>
         </div>
@@ -382,12 +446,15 @@ export default function DashboardPage() {
                     <th className="col-rank" style={{ cursor: 'default' }}>#</th>
                     <SortHeader label="Player" sortId="name" className="col-player" />
                     <SortHeader label="Pos" sortId="position" className="col-pos" />
-                    <SortHeader label="Avg ADP" sortId="avgAdp" className="col-adp" title="Average ADP across all sources" />
+                    <SortHeader
+                      label={`${activePlatformMeta.label} ADP`}
+                      sortId="platformAdp"
+                      className="col-adp col-adp--platform"
+                      title={`${activePlatformMeta.label} ADP — used for value calculation`}
+                    />
                     <SortHeader label="ECR" sortId="ecr" className="col-adp" title="FantasyPros Expert Consensus Ranking — changes with scoring format" />
-                    <SortHeader label="Sleeper" sortId="sleeperAdp" className="col-adp" title="Sleeper mock draft ADP — changes with scoring format" />
-                    <SortHeader label="ESPN" sortId="espnAdp" className="col-adp" title="ESPN ADP — not scoring-specific, same value across all formats" />
-                    <SortHeader label="Yahoo" sortId="yahooAdp" className="col-adp" title="Yahoo season rank — not ADP, not scoring-specific" />
-                    <SortHeader label="Value" sortId="value" className="col-value" title="Value = ADP vs ECR. Positive = steal, Negative = reach" />
+                    <SortHeader label="Value" sortId="value" className="col-value" title={`Value = ${activePlatformMeta.label} ADP vs ECR. Positive = steal, Negative = reach`} />
+                    <SortHeader label="Avg ADP" sortId="avgAdp" className="col-adp" title="Average ADP across all sources" />
                     <SortHeader label="Proj Pts" sortId="projPts" className="col-pts" title="Projected fantasy points for the season" />
                     <SortHeader label="Bye" sortId="bye" className="col-bye" title="Bye week" />
                   </tr>
@@ -401,7 +468,7 @@ export default function DashboardPage() {
 
                     // Check if this player's ADP falls near any of the user's picks
                     // Use a ±1.0 range to handle fractional ADPs (e.g., ADP 1.8 matches pick #1)
-                    const isNearUserPick = adp !== null && userPicks.some(
+                    const isNearUserPick = draftPosition !== null && adp !== null && userPicks.some(
                       (p) => Math.abs(adp - p.pick) < 1.0
                     );
 
@@ -457,10 +524,20 @@ export default function DashboardPage() {
                           </span>
                         </td>
 
-                        {/* Avg ADP */}
-                        <td className="col-adp">
-                          <span className="adp-cell" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {player.avgAdp?.toFixed(1) ?? '—'}
+                        {/* Platform ADP — highlighted */}
+                        <td className="col-adp col-adp--platform">
+                          <span
+                            className="adp-cell"
+                            style={{
+                              fontWeight: 700,
+                              color: player.platformAdp !== null ? activePlatformMeta.color : 'var(--text-muted)',
+                            }}
+                          >
+                            {player.platformAdp !== null
+                              ? (typeof player.platformAdp === 'number' && platform !== 'yahoo'
+                                  ? player.platformAdp.toFixed(1)
+                                  : player.platformAdp)
+                              : '—'}
                           </span>
                         </td>
 
@@ -474,32 +551,6 @@ export default function DashboardPage() {
                               {player.posRank}
                             </span>
                           )}
-                        </td>
-
-                        {/* Sleeper ADP */}
-                        <td className="col-adp">
-                          <span className={`adp-cell ${player.adp.sleeper === null ? 'adp-cell--empty' : ''}`}>
-                            {player.adp.sleeper?.toFixed(1) ?? '—'}
-                          </span>
-                        </td>
-
-                        {/* ESPN ADP */}
-                        <td className="col-adp">
-                          <span className={`adp-cell ${player.adp.espn === null ? 'adp-cell--empty' : ''}`}>
-                            {player.adp.espn?.toFixed(1) ?? '—'}
-                          </span>
-                        </td>
-
-                        {/* Yahoo Rank (Yahoo provides ranks, not ADP) */}
-                        <td className="col-adp">
-                          {(() => {
-                            const val = player.adp.yahoo ?? player.ranking.yahoo;
-                            return val !== null ? (
-                              <span className="adp-cell">{val}</span>
-                            ) : (
-                              <span className="adp-cell adp-cell--empty">—</span>
-                            );
-                          })()}
                         </td>
 
                         {/* Value */}
@@ -517,6 +568,13 @@ export default function DashboardPage() {
                           ) : (
                             <span className="adp-cell adp-cell--empty">—</span>
                           )}
+                        </td>
+
+                        {/* Avg ADP */}
+                        <td className="col-adp">
+                          <span className="adp-cell" style={{ color: 'var(--text-secondary)' }}>
+                            {player.avgAdp?.toFixed(1) ?? '—'}
+                          </span>
                         </td>
 
                         {/* Projected Points */}
