@@ -447,13 +447,15 @@ export default function DashboardPage() {
                     <SortHeader label="Player" sortId="name" className="col-player" />
                     <SortHeader label="Pos" sortId="position" className="col-pos" />
                     <SortHeader
-                      label={`${activePlatformMeta.label} ADP`}
+                      label={platform === 'yahoo' ? 'Yahoo Rank' : `${activePlatformMeta.label} ADP`}
                       sortId="platformAdp"
                       className="col-adp col-adp--platform"
-                      title={`${activePlatformMeta.label} ADP — used for value calculation`}
+                      title={platform === 'yahoo'
+                        ? 'Yahoo preseason rank — used for value calculation'
+                        : `${activePlatformMeta.label} ADP — used for value calculation`}
                     />
                     <SortHeader label="ECR" sortId="ecr" className="col-adp" title="FantasyPros Expert Consensus Ranking — changes with scoring format" />
-                    <SortHeader label="Value" sortId="value" className="col-value" title={`Value = ${activePlatformMeta.label} ADP vs ECR. Positive = steal, Negative = reach`} />
+                    <SortHeader label="Value" sortId="value" className="col-value" title={`Value = ${platform === 'yahoo' ? 'Yahoo Rank' : `${activePlatformMeta.label} ADP`} vs ECR. Positive = steal, Negative = reach`} />
                     <SortHeader label="Avg ADP" sortId="avgAdp" className="col-adp" title="Average ADP across all sources" />
                     <SortHeader label="Proj Pts" sortId="projPts" className="col-pts" title="Projected fantasy points for the season" />
                     <SortHeader label="Bye" sortId="bye" className="col-bye" title="Bye week" />
