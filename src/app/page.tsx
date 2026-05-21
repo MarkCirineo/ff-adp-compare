@@ -116,7 +116,7 @@ export default function DashboardPage() {
       const draftableLimit = leagueSize * 15;
       const valueScore =
         platformAdp !== null && rank !== null && platformAdp <= draftableLimit && rank <= draftableLimit
-          ? computeValueScore(platformAdp, rank, leagueSize)
+          ? computeValueScore(platformAdp, rank)
           : null;
 
       return {

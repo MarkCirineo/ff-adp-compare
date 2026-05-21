@@ -18,22 +18,21 @@ export const VALUE_TIERS: ValueTier[] = [
 ];
 
 /**
- * Compute value score: positive = undervalued (steal), negative = overvalued (reach).
+ * Compute value score: raw pick difference between platform ADP and expert consensus.
  * 
- * ADP higher than rank → player going later than expected → VALUE (positive)
- * ADP lower than rank → player going earlier than expected → REACH (negative)
+ * Value = PlatformADP − ECR
  * 
- * Round multiplier: early-round value discrepancies matter more.
+ * Positive → player going later than experts say → STEAL (you can grab them later)
+ * Negative → player going earlier than experts say → REACH (platform is overdrafting)
+ * 
+ * The number directly represents picks of disagreement, e.g. +5 means
+ * "this player is going 5 picks later on this platform than experts rank them."
  */
 export function computeValueScore(
   adp: number,
   rank: number,
-  leagueSize: number
 ): number {
-  const rawDiff = adp - rank;
-  const round = Math.ceil(adp / leagueSize);
-  const roundMultiplier = 1 + (2 / Math.max(round, 1));
-  return parseFloat((rawDiff * roundMultiplier).toFixed(1));
+  return parseFloat((adp - rank).toFixed(1));
 }
 
 /**
@@ -49,5 +48,7 @@ export function getValueTier(score: number): ValueTier {
 export function formatValueScore(score: number | null): string {
   if (score === null) return '—';
   const sign = score > 0 ? '+' : '';
-  return `${sign}${score.toFixed(1)}`;
+  // Show as integer when it's a whole number (cleaner for rank-based diffs)
+  const formatted = score % 1 === 0 ? score.toFixed(0) : score.toFixed(1);
+  return `${sign}${formatted}`;
 }
