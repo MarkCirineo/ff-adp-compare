@@ -50,6 +50,33 @@ const PLATFORM_META: Record<Platform, { label: string; icon: string; color: stri
   yahoo:   { label: 'Yahoo',   icon: '🟣', color: '#7c5cfc' },
 };
 
+// ---- LocalStorage persistence key ----
+const SETTINGS_KEY = 'draft-edge-settings';
+
+interface PersistedSettings {
+  platform: Platform;
+  scoring: 'std' | 'half_ppr' | 'ppr';
+  leagueSize: number;
+  draftPosition: number | null;
+  draftMode: DraftMode;
+}
+
+function loadSettings(): Partial<PersistedSettings> {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Partial<PersistedSettings>;
+  } catch {
+    return {};
+  }
+}
+
+function saveSettings(s: PersistedSettings): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  } catch { /* quota errors, etc. */ }
+}
+
 export default function DashboardPage() {
   // ---- State ----
   const [players, setPlayers] = useState<PlayerRow[]>([]);
@@ -63,6 +90,9 @@ export default function DashboardPage() {
   const [draftPosition, setDraftPosition] = useState<number | null>(null);
   const [draftMode, setDraftMode] = useState<DraftMode>('snake');
 
+  // Guard: don't persist until we've hydrated from localStorage
+  const [hydrated, setHydrated] = useState(false);
+
   // Filters
   const [search, setSearch] = useState('');
   const [posFilter, setPosFilter] = useState<string>('ALL');
@@ -70,6 +100,32 @@ export default function DashboardPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  // ---- Hydrate settings from localStorage on mount ----
+  useEffect(() => {
+    const saved = loadSettings();
+    if (saved.platform) setPlatform(saved.platform);
+    if (saved.scoring) setScoring(saved.scoring);
+    if (saved.leagueSize) setLeagueSize(saved.leagueSize);
+    if (saved.draftPosition !== undefined) setDraftPosition(saved.draftPosition);
+    if (saved.draftMode) setDraftMode(saved.draftMode);
+    // Ensure pick doesn't exceed league size
+    if (
+      saved.draftPosition !== null &&
+      saved.draftPosition !== undefined &&
+      saved.leagueSize &&
+      saved.draftPosition > saved.leagueSize
+    ) {
+      setDraftPosition(null);
+    }
+    setHydrated(true);
+  }, []);
+
+  // ---- Persist settings to localStorage on change ----
+  useEffect(() => {
+    if (!hydrated) return;
+    saveSettings({ platform, scoring, leagueSize, draftPosition, draftMode });
+  }, [hydrated, platform, scoring, leagueSize, draftPosition, draftMode]);
 
   // ---- Data Fetch ----
   const fetchPlayers = useCallback(async () => {
