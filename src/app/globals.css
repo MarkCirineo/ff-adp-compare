@@ -2,40 +2,40 @@
 /* Draft Edge — Global Styles                   */
 /* ============================================ */
 /* Dark-mode-first design system                */
-/* Inter font, slate/zinc palette               */
+/* Inter font, true-neutral / gray palette      */
 /* ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ---- CSS Custom Properties ---- */
 :root {
-  /* Colors — Slate/Zinc dark palette */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111118;
-  --bg-tertiary: #1a1a24;
-  --bg-elevated: #222230;
-  --bg-hover: #2a2a3a;
-  --bg-active: #33334a;
+  /* Colors — True-neutral / Gray dark palette */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #121212;
+  --bg-tertiary: #1a1a1a;
+  --bg-elevated: #232323;
+  --bg-hover: #2c2c2c;
+  --bg-active: #353535;
   
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
+  --border-default: rgba(255, 255, 255, 0.10);
   --border-strong: rgba(255, 255, 255, 0.15);
   
-  --text-primary: #f0f0f5;
-  --text-secondary: #a0a0b8;
-  --text-tertiary: #6b6b80;
-  --text-muted: #4a4a5e;
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #6b6b6b;
+  --text-muted: #4a4a4a;
   
-  /* Accent */
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
-  --accent-subtle: rgba(99, 102, 241, 0.12);
-  --accent-glow: rgba(99, 102, 241, 0.25);
+  /* Accent — Emerald / Turf Green */
+  --accent: #10b981;
+  --accent-hover: #34d399;
+  --accent-subtle: rgba(16, 185, 129, 0.12);
+  --accent-glow: rgba(16, 185, 129, 0.25);
   
   /* Position Colors */
   --pos-qb: #ef4444;
   --pos-rb: #3b82f6;
-  --pos-wr: #10b981;
+  --pos-wr: #22c55e;
   --pos-te: #f59e0b;
   --pos-k: #8b5cf6;
   --pos-def: #6b7280;
@@ -48,8 +48,8 @@
   --value-major-steal: #15803d;
   
   /* Draft overlay */
-  --draft-user-pick: rgba(99, 102, 241, 0.15);
-  --draft-user-border: rgba(99, 102, 241, 0.6);
+  --draft-user-pick: rgba(16, 185, 129, 0.15);
+  --draft-user-border: rgba(16, 185, 129, 0.6);
   --draft-round-alt: rgba(255, 255, 255, 0.02);
   
   /* Spacing */
@@ -143,7 +143,7 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   z-index: 50;
   height: var(--header-height);
-  background: rgba(10, 10, 15, 0.85);
+  background: rgba(10, 10, 10, 0.85);
   backdrop-filter: blur(16px) saturate(180%);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
@@ -159,7 +159,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 800;
   font-size: 1.2rem;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  background: linear-gradient(135deg, var(--accent), #6ee7b7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -169,7 +169,7 @@ h1, h2, h3, h4, h5, h6 {
 .app-header__logo-icon {
   width: 26px;
   height: 26px;
-  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  background: linear-gradient(135deg, var(--accent), #6ee7b7);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
