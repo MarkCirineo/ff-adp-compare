@@ -10,11 +10,13 @@ export interface ValueTier {
 }
 
 export const VALUE_TIERS: ValueTier[] = [
-  { max: -8,       color: '#fca5a5', bgColor: 'rgba(220, 38, 38, 0.2)', label: 'Major Reach' },
-  { max: -3,       color: '#fdba74', bgColor: 'rgba(234, 88, 12, 0.15)', label: 'Reach' },
-  { max: 3,        color: '#a3a3a3', bgColor: 'rgba(115, 115, 115, 0.1)', label: 'Fair Value' },
-  { max: 8,        color: '#86efac', bgColor: 'rgba(22, 163, 74, 0.15)', label: 'Value' },
-  { max: Infinity,  color: '#4ade80', bgColor: 'rgba(21, 128, 61, 0.2)', label: 'Major Steal' },
+  { max: -8,        color: '#fca5a5', bgColor: 'rgba(220, 38, 38, 0.22)', label: 'Major Reach' },
+  { max: -3,        color: '#fdba74', bgColor: 'rgba(234, 88, 12, 0.15)', label: 'Reach' },
+  { max: -0.5,      color: '#e8a89a', bgColor: 'rgba(220, 80, 60, 0.07)', label: 'Slight Reach' },
+  { max: 0.5,       color: '#a3a3a3', bgColor: 'rgba(115, 115, 115, 0.08)', label: 'Fair Value' },
+  { max: 3,         color: '#a0d4a0', bgColor: 'rgba(22, 163, 74, 0.07)', label: 'Slight Value' },
+  { max: 8,         color: '#86efac', bgColor: 'rgba(22, 163, 74, 0.15)', label: 'Value' },
+  { max: Infinity,  color: '#4ade80', bgColor: 'rgba(21, 128, 61, 0.22)', label: 'Major Steal' },
 ];
 
 /**
