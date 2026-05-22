@@ -5,7 +5,7 @@
 // ============================================
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { APP_CONFIG } from '@/lib/config';
+import { Logo } from './components/Logo';
 import { computeValueScore, getValueTier, formatValueScore } from '@/lib/scoring';
 import { getUserPicks } from '@/lib/draft';
 import type { DraftMode } from '@/lib/draft';
@@ -328,10 +328,7 @@ export default function DashboardPage() {
     <>
       {/* Header */}
       <header className="app-header" role="banner">
-        <div className="app-header__logo">
-          <div className="app-header__logo-icon">⚡</div>
-          {APP_CONFIG.name}
-        </div>
+        <Logo size={30} />
 
         {/* Compact player counts — top right */}
         <div className="header-stats">
