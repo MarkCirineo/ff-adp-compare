@@ -530,7 +530,7 @@ h1, h2, h3, h4, h5, h6 {
 .player-table th {
   background: var(--bg-tertiary);
   padding: 10px 12px;
-  text-align: left;
+  text-align: center;
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -577,7 +577,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Column widths */
 .col-rank   { width: 45px; text-align: center; }
-.col-player { width: 240px; }
+.col-player { width: 240px; text-align: left; }
 .col-pos    { width: 60px; text-align: center; }
 .col-team   { width: 60px; text-align: center; }
 .col-bye    { width: 50px; text-align: center; }
