@@ -7,7 +7,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { APP_CONFIG } from '@/lib/config';
 import { computeValueScore, getValueTier, formatValueScore } from '@/lib/scoring';
-import { getUserPicks, adpToRound } from '@/lib/draft';
+import { getUserPicks } from '@/lib/draft';
+import type { DraftMode } from '@/lib/draft';
 
 // ---- Types ----
 interface PlayerRow {
@@ -60,6 +61,7 @@ export default function DashboardPage() {
   const [scoring, setScoring] = useState<'std' | 'half_ppr' | 'ppr'>('half_ppr');
   const [leagueSize, setLeagueSize] = useState(12);
   const [draftPosition, setDraftPosition] = useState<number | null>(null);
+  const [draftMode, setDraftMode] = useState<DraftMode>('snake');
 
   // Filters
   const [search, setSearch] = useState('');
@@ -92,8 +94,14 @@ export default function DashboardPage() {
 
   // ---- Draft Picks (only when pick position is set) ----
   const userPicks = useMemo(
-    () => draftPosition !== null ? getUserPicks(leagueSize, draftPosition) : [],
-    [leagueSize, draftPosition]
+    () => draftPosition !== null ? getUserPicks(leagueSize, draftPosition, 18, draftMode) : [],
+    [leagueSize, draftPosition, draftMode]
+  );
+
+  // Pre-compute a Set of user pick overall numbers for O(1) lookup in rows
+  const userPickSet = useMemo(
+    () => new Set(userPicks.map((p) => p.pick)),
+    [userPicks]
   );
 
   // ---- Helper: get platform-specific ADP ----
@@ -368,6 +376,26 @@ export default function DashboardPage() {
             </select>
           </div>
 
+          <div className="settings-hero__group">
+            <label className="settings-hero__label">Draft Mode</label>
+            <div className="draft-mode-toggle" role="radiogroup" aria-label="Draft mode">
+              <button
+                className={`draft-mode-btn ${draftMode === 'snake' ? 'draft-mode-btn--active' : ''}`}
+                onClick={() => setDraftMode('snake')}
+                aria-pressed={draftMode === 'snake'}
+              >
+                Snake
+              </button>
+              <button
+                className={`draft-mode-btn ${draftMode === 'linear' ? 'draft-mode-btn--active' : ''}`}
+                onClick={() => setDraftMode('linear')}
+                aria-pressed={draftMode === 'linear'}
+              >
+                Linear
+              </button>
+            </div>
+          </div>
+
           {/* Show next pick info if draft position is set */}
           {draftPosition !== null && userPicks[0] && (
             <>
@@ -463,16 +491,13 @@ export default function DashboardPage() {
                 </thead>
                 <tbody>
                   {filteredPlayers.map((player, idx) => {
-                    // Draft overlay: determine round + user pick
-                    const adp = player.avgAdp;
-                    const round = adp !== null ? adpToRound(adp, leagueSize) : null;
-                    const isEvenRound = round !== null && round % 2 === 0;
+                    // Row-based draft overlay: row index determines round & pick
+                    const overallPick = idx + 1;
+                    const round = Math.ceil(overallPick / leagueSize);
+                    const isEvenRound = round % 2 === 0;
 
-                    // Check if this player's ADP falls near any of the user's picks
-                    // Use a ±1.0 range to handle fractional ADPs (e.g., ADP 1.8 matches pick #1)
-                    const isNearUserPick = draftPosition !== null && adp !== null && userPicks.some(
-                      (p) => Math.abs(adp - p.pick) < 1.0
-                    );
+                    // Check if this row position is one of the user's snake/linear picks
+                    const isUserPick = draftPosition !== null && userPickSet.has(overallPick);
 
                     // Value tier
                     const tier = player.valueScore !== null
@@ -484,7 +509,7 @@ export default function DashboardPage() {
                         key={player.id}
                         className={[
                           isEvenRound ? 'draft-round-band--even' : 'draft-round-band--odd',
-                          isNearUserPick ? 'draft-pick-row draft-pick-row--user' : '',
+                          isUserPick ? 'draft-pick-row draft-pick-row--user' : '',
                         ].join(' ')}
                       >
                         {/* Rank */}
@@ -509,7 +534,7 @@ export default function DashboardPage() {
                               {player.team && (
                                 <span className="player-team">{player.team}</span>
                               )}
-                              {isNearUserPick && (
+                              {isUserPick && (
                                 <span className="pick-badge" style={{ marginLeft: 8 }}>
                                   <span className="pick-badge__icon" />
                                   YOUR PICK

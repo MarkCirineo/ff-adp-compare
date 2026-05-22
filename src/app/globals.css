@@ -357,6 +357,41 @@ h1, h2, h3, h4, h5, h6 {
   min-width: 100px;
 }
 
+/* ---- Draft Mode Toggle ---- */
+.draft-mode-toggle {
+  display: flex;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+
+.draft-mode-btn {
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.draft-mode-btn:not(:last-child) {
+  border-right: 1px solid var(--border-default);
+}
+
+.draft-mode-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+.draft-mode-btn--active {
+  background: var(--accent-subtle);
+  color: var(--accent-hover);
+}
+
 .app-main {
   flex: 1;
   display: flex;

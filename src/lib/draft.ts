@@ -1,6 +1,8 @@
 // ============================================
-// Snake Draft Calculator
+// Draft Calculator — Snake & Linear
 // ============================================
+
+export type DraftMode = 'snake' | 'linear';
 
 export interface DraftPick {
   round: number;
@@ -10,20 +12,22 @@ export interface DraftPick {
 }
 
 /**
- * Generate all picks for a snake draft.
+ * Generate all picks for a draft (snake or linear).
  * Returns picks up to `totalRounds * leagueSize`.
  */
 export function generateSnakeDraft(
   leagueSize: number,
   draftPosition: number,
-  totalRounds: number = 18
+  totalRounds: number = 18,
+  mode: DraftMode = 'snake'
 ): DraftPick[] {
   const picks: DraftPick[] = [];
 
   for (let round = 1; round <= totalRounds; round++) {
     for (let slot = 1; slot <= leagueSize; slot++) {
-      // Snake: odd rounds go 1→N, even rounds go N→1
-      const pickInRound = round % 2 === 1 ? slot : leagueSize - slot + 1;
+      const pickInRound = mode === 'snake'
+        ? (round % 2 === 1 ? slot : leagueSize - slot + 1)
+        : slot;
       const overallPick = (round - 1) * leagueSize + slot;
 
       picks.push({
@@ -39,19 +43,22 @@ export function generateSnakeDraft(
 }
 
 /**
- * Get only the user's picks in a snake draft.
+ * Get only the user's picks in a draft.
+ * Snake: picks snake back and forth (1→N, N→1, …).
+ * Linear: picks are always the same slot each round.
  */
 export function getUserPicks(
   leagueSize: number,
   draftPosition: number,
-  totalRounds: number = 18
+  totalRounds: number = 18,
+  mode: DraftMode = 'snake'
 ): DraftPick[] {
   const userPicks: DraftPick[] = [];
 
   for (let round = 1; round <= totalRounds; round++) {
-    const pickInRound = round % 2 === 1
-      ? draftPosition
-      : leagueSize - draftPosition + 1;
+    const pickInRound = mode === 'snake'
+      ? (round % 2 === 1 ? draftPosition : leagueSize - draftPosition + 1)
+      : draftPosition;
     const overallPick = (round - 1) * leagueSize + pickInRound;
 
     userPicks.push({
