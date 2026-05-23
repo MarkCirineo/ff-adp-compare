@@ -45,7 +45,7 @@ type SortKey =
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF'] as const;
 
 const PLATFORM_META: Record<Platform, { label: string; icon: string; color: string }> = {
-  sleeper: { label: 'Sleeper', icon: '🟢', color: '#3dd8a0' },
+  sleeper: { label: 'Sleeper', icon: '🔵', color: '#5da0e6' },
   espn:    { label: 'ESPN',    icon: '🔴', color: '#ff4545' },
   yahoo:   { label: 'Yahoo',   icon: '🟣', color: '#7c5cfc' },
 };

@@ -203,7 +203,7 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
-.header-stat__dot--sleeper { background: #3dd8a0; }
+.header-stat__dot--sleeper { background: #5da0e6; }
 .header-stat__dot--espn    { background: #ff4545; }
 .header-stat__dot--yahoo   { background: #7c5cfc; }
 
