@@ -50,8 +50,9 @@ const PLATFORM_META: Record<Platform, { label: string; icon: string; color: stri
   yahoo:   { label: 'Yahoo',   icon: '🟣', color: '#7c5cfc' },
 };
 
-// ---- LocalStorage persistence key ----
+// ---- LocalStorage persistence keys ----
 const SETTINGS_KEY = 'draft-edge-settings';
+const CROSSED_OUT_KEY = 'draft-edge-crossed-out';
 
 interface PersistedSettings {
   platform: Platform;
@@ -77,6 +78,22 @@ function saveSettings(s: PersistedSettings): void {
   } catch { /* quota errors, etc. */ }
 }
 
+function loadCrossedOut(): Set<string> {
+  try {
+    const raw = localStorage.getItem(CROSSED_OUT_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveCrossedOut(ids: Set<string>): void {
+  try {
+    localStorage.setItem(CROSSED_OUT_KEY, JSON.stringify([...ids]));
+  } catch { /* quota errors, etc. */ }
+}
+
 export default function DashboardPage() {
   // ---- State ----
   const [players, setPlayers] = useState<PlayerRow[]>([]);
@@ -92,6 +109,11 @@ export default function DashboardPage() {
 
   // Guard: don't persist until we've hydrated from localStorage
   const [hydrated, setHydrated] = useState(false);
+
+  // Crossout (draft tracker)
+  const [crossedOut, setCrossedOut] = useState<Set<string>>(new Set());
+  const [crossoutActive, setCrossoutActive] = useState(false);
+  const [hideDrafted, setHideDrafted] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -118,6 +140,8 @@ export default function DashboardPage() {
     ) {
       setDraftPosition(null);
     }
+    // Hydrate crossed-out players
+    setCrossedOut(loadCrossedOut());
     setHydrated(true);
   }, []);
 
@@ -192,7 +216,27 @@ export default function DashboardPage() {
     });
   }, [players, leagueSize, getPlatformAdp]);
 
-  // ---- Filtered & Sorted ----
+  // ---- Crossout handlers ----
+  const toggleCrossout = useCallback((playerId: string) => {
+    setCrossedOut((prev) => {
+      const next = new Set(prev);
+      if (next.has(playerId)) {
+        next.delete(playerId);
+      } else {
+        next.add(playerId);
+      }
+      saveCrossedOut(next);
+      return next;
+    });
+  }, []);
+
+  const clearAllCrossedOut = useCallback(() => {
+    setCrossedOut(new Set());
+    saveCrossedOut(new Set());
+  }, []);
+
+  // ---- Filtered & Sorted (FULL list — never hides drafted) ----
+  // This is the authoritative list used for pick position calculations.
   const filteredPlayers = useMemo(() => {
     let result = computedPlayers;
 
@@ -281,6 +325,26 @@ export default function DashboardPage() {
 
     return result;
   }, [computedPlayers, posFilter, search, sortKey, sortDir]);
+
+  // Pre-compute which PLAYER IDs land on user pick slots using the full list.
+  // This survives the hideDrafted filter — a player marked as YOUR PICK stays
+  // marked even when other players are hidden.
+  const userPickPlayerIds = useMemo(() => {
+    if (draftPosition === null) return new Set<string>();
+    const ids = new Set<string>();
+    filteredPlayers.forEach((p, idx) => {
+      if (userPickSet.has(idx + 1)) {
+        ids.add(p.id);
+      }
+    });
+    return ids;
+  }, [filteredPlayers, draftPosition, userPickSet]);
+
+  // Display list — optionally hides drafted players for cleaner view.
+  const displayPlayers = useMemo(() => {
+    if (!hideDrafted) return filteredPlayers;
+    return filteredPlayers.filter((p) => !crossedOut.has(p.id));
+  }, [filteredPlayers, hideDrafted, crossedOut]);
 
   // ---- Sort Handler ----
   const handleSort = (key: SortKey) => {
@@ -466,15 +530,21 @@ export default function DashboardPage() {
 
         {/* Controls */}
         <div className="controls-bar">
-          <input
-            id="player-search"
-            type="text"
-            className="input search-input"
-            placeholder="Search players..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search players"
-          />
+          <div className="search-wrapper">
+            <svg className="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              id="player-search"
+              type="text"
+              className="input search-input"
+              placeholder="Search players..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search players"
+            />
+          </div>
 
           <div className="position-filters" role="group" aria-label="Filter by position">
             {POSITIONS.map((pos) => (
@@ -491,8 +561,49 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Draft crossout controls */}
+          <div className="crossout-controls">
+            <button
+              id="crossout-toggle"
+              className={`crossout-toggle ${crossoutActive ? 'crossout-toggle--active' : ''}`}
+              onClick={() => setCrossoutActive((v) => !v)}
+              aria-pressed={crossoutActive}
+              title={crossoutActive ? 'Disable draft tracker — click to stop crossing out players' : 'Enable draft tracker — click players to cross them out'}
+            >
+              <span className="crossout-toggle__label">{crossoutActive ? '✕ Drafting' : 'Draft Mode'}</span>
+            </button>
+
+            {crossedOut.size > 0 && (
+              <>
+                <span className="crossout-badge">
+                  {crossedOut.size} drafted
+                </span>
+                <button
+                  id="hide-drafted-toggle"
+                  className={`crossout-hide-btn ${hideDrafted ? 'crossout-hide-btn--active' : ''}`}
+                  onClick={() => setHideDrafted((v) => !v)}
+                  aria-pressed={hideDrafted}
+                  title={hideDrafted ? 'Show drafted players' : 'Hide drafted players'}
+                >
+                  {hideDrafted ? '◉ Show' : '○ Hide'}
+                </button>
+                <button
+                  id="clear-drafted"
+                  className="crossout-clear-btn"
+                  onClick={clearAllCrossedOut}
+                  title="Clear all crossed-out players"
+                >
+                  Clear
+                </button>
+              </>
+            )}
+          </div>
+
           <span className="results-count">
-            {filteredPlayers.length} players
+            {crossedOut.size > 0
+              ? `${displayPlayers.length} / ${filteredPlayers.length} players (${crossedOut.size} drafted)`
+              : `${displayPlayers.length} players`
+            }
           </span>
         </div>
 
@@ -509,7 +620,7 @@ export default function DashboardPage() {
               <div className="empty-state__title">Failed to load</div>
               <div className="empty-state__text">{error}</div>
             </div>
-          ) : filteredPlayers.length === 0 ? (
+          ) : displayPlayers.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state__icon">🏈</div>
               <div className="empty-state__title">No players found</div>
@@ -521,7 +632,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="table-scroll" ref={tableScrollRef}>
-              <table className="player-table" role="grid">
+              <table className={`player-table ${crossoutActive ? 'crossout-active' : ''}`} role="grid">
                 <thead>
                   <tr>
                     <th className="col-rank" style={{ cursor: 'default' }}>#</th>
@@ -543,19 +654,22 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPlayers.map((player, idx) => {
-                    // Row-based draft overlay: row index determines round & pick
-                    const overallPick = idx + 1;
-                    const round = Math.ceil(overallPick / leagueSize);
+                  {displayPlayers.map((player, idx) => {
+                    // Row-based draft overlay: display index for visual banding
+                    const displayPick = idx + 1;
+                    const round = Math.ceil(displayPick / leagueSize);
                     const isEvenRound = round % 2 === 0;
 
-                    // Check if this row position is one of the user's snake/linear picks
-                    const isUserPick = draftPosition !== null && userPickSet.has(overallPick);
+                    // YOUR PICK is based on the FULL list position (pre-hide),
+                    // so picks don't shift when drafted players are hidden.
+                    const isUserPick = userPickPlayerIds.has(player.id);
 
                     // Value tier
                     const tier = player.valueScore !== null
                       ? getValueTier(player.valueScore)
                       : null;
+
+                    const isCrossed = crossedOut.has(player.id);
 
                     return (
                       <tr
@@ -563,7 +677,10 @@ export default function DashboardPage() {
                         className={[
                           isEvenRound ? 'draft-round-band--even' : 'draft-round-band--odd',
                           isUserPick ? 'draft-pick-row draft-pick-row--user' : '',
+                          isCrossed ? 'player-row--crossed-out' : '',
                         ].join(' ')}
+                        onClick={crossoutActive ? () => toggleCrossout(player.id) : undefined}
+                        style={crossoutActive ? { cursor: 'pointer' } : undefined}
                       >
                         {/* Rank */}
                         <td className="col-rank" style={{ color: 'var(--text-tertiary)' }}>
