@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Draft Edge — Logo Component
+ * ADP Scout — Logo Component
  *
  * Premium inline SVG logo mark + wordmark.
  * The bolt icon is a custom, sharp-geometric lightning bolt designed
@@ -125,7 +125,7 @@ export function Logo({ size = 28 }: { size?: number }) {
         }}
       >
         <span
-          className="logo__text-draft"
+          className="logo__text-adp"
           style={{
             fontSize: `${fontSize}px`,
             fontWeight: 800,
@@ -133,10 +133,10 @@ export function Logo({ size = 28 }: { size?: number }) {
             color: '#f0f0f0',
           }}
         >
-          Draft
+          ADP
         </span>
         <span
-          className="logo__text-edge"
+          className="logo__text-scout"
           style={{
             fontSize: `${fontSize}px`,
             fontWeight: 800,
@@ -147,7 +147,7 @@ export function Logo({ size = 28 }: { size?: number }) {
             backgroundClip: 'text',
           }}
         >
-          Edge
+          Scout
         </span>
       </div>
     </div>

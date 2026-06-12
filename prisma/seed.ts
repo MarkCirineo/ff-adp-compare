@@ -1,5 +1,5 @@
 // ============================================
-// Draft Edge — Database Seed Script
+// ADP Scout — Database Seed Script
 // ============================================
 // Seeds the Player table from Sleeper's canonical player list.
 // Usage: yarn db:seed   (or: npx prisma db seed)
@@ -47,7 +47,7 @@ interface SleeperState {
 }
 
 async function main() {
-  console.log('🏈 Draft Edge — Seeding database...\n');
+  console.log('🏈 ADP Scout — Seeding database...\n');
 
   // 1. Get current NFL state (season)
   console.log('  Fetching NFL state from Sleeper...');

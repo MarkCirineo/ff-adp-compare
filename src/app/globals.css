@@ -1,5 +1,5 @@
 /* ============================================ */
-/* Draft Edge — Global Styles                   */
+/* ADP Scout — Global Styles                    */
 /* ============================================ */
 /* Dark-mode-first design system                */
 /* Inter font, true-neutral / gray palette      */
@@ -1051,4 +1051,25 @@ h1, h2, h3, h4, h5, h6 {
 
 .crossout-active tbody tr:active {
   background: var(--bg-active);
+}
+
+/* ---- Accessibility ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent, #10b981);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
 }

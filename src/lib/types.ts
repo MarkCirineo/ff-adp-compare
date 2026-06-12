@@ -1,5 +1,5 @@
 // ============================================
-// Draft Edge — Shared Types
+// ADP Scout — Shared Types
 // ============================================
 
 /** Scoring format */

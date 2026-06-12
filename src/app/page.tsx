@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================
-// Draft Edge — Main Dashboard
+// ADP Scout — Main Dashboard
 // ============================================
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -51,8 +51,8 @@ const PLATFORM_META: Record<Platform, { label: string; icon: string; color: stri
 };
 
 // ---- LocalStorage persistence keys ----
-const SETTINGS_KEY = 'draft-edge-settings';
-const CROSSED_OUT_KEY = 'draft-edge-crossed-out';
+const SETTINGS_KEY = 'adpscout-settings';
+const CROSSED_OUT_KEY = 'adpscout-crossed-out';
 
 interface PersistedSettings {
   platform: Platform;

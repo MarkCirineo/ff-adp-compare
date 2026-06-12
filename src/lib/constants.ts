@@ -1,7 +1,7 @@
 import type { ValueTier, Position } from './types.js';
 
 // ============================================
-// Draft Edge — Constants
+// ADP Scout — Constants
 // ============================================
 
 /** All fantasy-relevant positions */

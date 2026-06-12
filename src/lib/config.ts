@@ -1,11 +1,11 @@
 // ============================================
-// Draft Edge — App Configuration
+// ADP Scout — App Configuration
 // ============================================
 // Change name/branding here. One file, one place.
 
 export const APP_CONFIG = {
-  name: 'Draft Edge',
-  shortName: 'DraftEdge',
-  description: 'Fantasy football draft assistant — ADP vs rankings comparison, value picks, and draft position visualization.',
+  name: 'ADP Scout',
+  shortName: 'ADPScout',
+  description: 'Compare ADP across Sleeper, ESPN & Yahoo against expert consensus rankings. Find value picks, steals, and reaches for your fantasy football draft.',
   version: '0.1.0',
 } as const;

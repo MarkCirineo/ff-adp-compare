@@ -1,5 +1,5 @@
 // ============================================
-// Draft Edge — Sync CLI
+// ADP Scout — Sync CLI
 // ============================================
 // Usage:
 //   yarn sync                    # full pipeline (all sources)
@@ -43,7 +43,7 @@ function parseArgs(): {
       }
     } else if (arg === '--help' || arg === '-h') {
       console.log(`
-🏈 Draft Edge — Data Sync CLI
+🏈 ADP Scout — Data Sync CLI
 
 Usage:
   yarn sync                    Full pipeline (all sources)
@@ -63,7 +63,7 @@ Sources can be combined: yarn sync --source=sleeper --source=espn
 }
 
 async function main() {
-  console.log('\n🏈 Draft Edge — Data Sync\n');
+  console.log('\n🏈 ADP Scout — Data Sync\n');
 
   const { sources, dryRun, season } = parseArgs();
 
