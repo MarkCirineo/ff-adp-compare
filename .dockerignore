@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+.next
+out
+dist
+
+# Git
+.git
+.gitignore
+
+# Environment (secrets)
+.env
+.env.local
+.env.*.local
+.env.production
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (avoid recursive context)
+docker-compose*.yml
+
+# Misc
+*.md
+*.log
+*.tsbuildinfo
+LICENSE
