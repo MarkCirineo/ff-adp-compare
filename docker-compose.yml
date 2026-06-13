@@ -29,6 +29,8 @@ services:
   app:
     build: .
     restart: unless-stopped
+    ports:
+      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -36,26 +38,8 @@ services:
     networks:
       - internal
 
-  # ---- Nginx Reverse Proxy ----
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - certbot-webroot:/var/www/certbot:ro
-      - certbot-certs:/etc/letsencrypt:ro
-    depends_on:
-      - app
-    networks:
-      - internal
-
 volumes:
   pgdata:
-  certbot-webroot:
-  certbot-certs:
 
 networks:
   internal:
