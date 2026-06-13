@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { APP_CONFIG } from "@/lib/config";
 import "./globals.css";
 
@@ -60,6 +61,12 @@ export default function RootLayout({
         <div className="app-layout">
           {children}
         </div>
+        <Script
+          defer
+          src="https://analytics.markcirineo.com/script.js"
+          data-website-id="3c396565-8557-41b6-ae02-c0a15502d7e6"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
